@@ -26,16 +26,22 @@ void setup(){
   // initialize serial communication at 115200 bits per second:
   Serial.begin(115200);
   
-  uint8_t arr[NUM_TASKS];
+  uint8_t arr[NUM_TASKS]; // array 
   
   for(int i = 0;i<NUM_TASKS;i++)
   {
     arr[i] = i;
-    Serial.print("i:");Serial.print(i,DEC);Serial.print("|a:");Serial.println(arr[i],DEC);
-    
-    xTaskCreatePinnedToCore(Task, "Task" + i, 2048, (void *)(arr + i), 1, NULL,  ARDUINO_RUNNING_CORE);
+    //Serial.print("i:");Serial.print(i,DEC);
+    Serial.print("|a:");Serial.println(arr[i],DEC);
+
+    xTaskCreatePinnedToCore(Task, "Task" + i, 2048, (void *)(arr + i), 1, NULL,  ARDUINO_RUNNING_CORE); //all tasks priority 1
+    //xTaskCreatePinnedToCore(Task, "Task" + i, 2048, (void *)(arr + i), i, NULL,  ARDUINO_RUNNING_CORE); //tasks increasing priority, 0 to NUM_TASKS - 1
+    //xTaskCreatePinnedToCore(Task, "Task" + i, 2048, (void *)(arr + i), (i == 0 ? 1 : (i % 2 == 0 ? 1 : 2)), NULL,  ARDUINO_RUNNING_CORE); //tasks alternating priority between 1 and 2
   }
-  xTaskCreatePinnedToCore(Puts, "Output", 2048, NULL, 2, NULL,  ARDUINO_RUNNING_CORE);
+  
+  //xTaskCreatePinnedToCore(Puts, "Output", 2048, NULL, NUM_TASKS, NULL,  ARDUINO_RUNNING_CORE);  //priority NUM_TASKS
+  xTaskCreatePinnedToCore(Puts, "Output", 2048, NULL, 1, NULL,  ARDUINO_RUNNING_CORE);  //priority 1
+  //xTaskCreatePinnedToCore(Puts, "Output", 2048, NULL, NUM_TASKS, NULL,  ARDUINO_RUNNING_CORE);  //priority 3
   
   Serial.println("Setup Done!");
 } void loop(){};
@@ -46,9 +52,8 @@ void setup(){
 
 void task_func(void *pvParameters)
 {
-    //ets_delay_us(3000);
-    Serial.println(":]");
-    
+    ets_delay_us(1000);
+    //Serial.println(":]");
     if(micros() - lastincrease >= 1000)
     {
       (*(uint32_t *)pvParameters)++;
@@ -64,6 +69,7 @@ void Task(void *pvParameters)
     uint8_t *k;
     k = (uint8_t *)pvParameters;
     uint32_t *taskcounter = counter + *k;
+    vTaskDelay(1000);
     for(;;)
     {
       //ets_delay_us(1000);
@@ -74,7 +80,7 @@ void Task(void *pvParameters)
 
 void Puts(void *pvParameters)
 {
-  vTaskDelay(100);
+  vTaskDelay(1100);
   for(;;)
   {
     if(millis() - lastoutput >= 1000)
