@@ -12,7 +12,7 @@
 
 // define two tasks for Blink & AnalogRead
 void Task(void *pvParameters);
-void task_func(uint8_t *argc)
+void task_func(void *pvParameters)
 {
     ets_delay_us(3000);
     Serial.println(":]");
