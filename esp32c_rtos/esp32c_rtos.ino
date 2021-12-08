@@ -16,7 +16,7 @@ void task_func(uint8_t *argc)
 {
     ets_delay_us(3000);
     Serial.println(":]");
-    Serial.println(*argc);
+    //Serial.println(*argc);
     return;
 };
 
