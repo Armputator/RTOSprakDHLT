@@ -4,7 +4,7 @@
 #define ARDUINO_RUNNING_CORE 1
 #endif
 
-#define NUM_TASKS 10
+#define NUM_TASKS 5
 
 //-------------------------------
 
@@ -32,11 +32,12 @@ void setup(){
   {
     arr[i] = i;
     //Serial.print("i:");Serial.print(i,DEC);
-    Serial.print("|a:");Serial.println(arr[i],DEC);
 
     xTaskCreatePinnedToCore(Task, "Task" + i, 2048, (void *)(arr + i), 1, NULL,  ARDUINO_RUNNING_CORE); //all tasks priority 1
     //xTaskCreatePinnedToCore(Task, "Task" + i, 2048, (void *)(arr + i), i, NULL,  ARDUINO_RUNNING_CORE); //tasks increasing priority, 0 to NUM_TASKS - 1
     //xTaskCreatePinnedToCore(Task, "Task" + i, 2048, (void *)(arr + i), (i == 0 ? 1 : (i % 2 == 0 ? 1 : 2)), NULL,  ARDUINO_RUNNING_CORE); //tasks alternating priority between 1 and 2
+    
+    Serial.print("|a:");Serial.println(arr[i],DEC);
   }
   
   //xTaskCreatePinnedToCore(Puts, "Output", 2048, NULL, NUM_TASKS, NULL,  ARDUINO_RUNNING_CORE);  //priority NUM_TASKS
