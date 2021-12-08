@@ -12,10 +12,10 @@
 
 // define two tasks for Blink & AnalogRead
 void Task(void *pvParameters);
-void task_func(void *argc)
+void task_func(uint8_t *argc)
 {
     Serial.println(":]");
-    Serial.println(*(int *)argc);
+    Serial.println(*argc);
     return;
 };
 
@@ -23,9 +23,10 @@ void task_func(void *argc)
 void setup(){
   // initialize serial communication at 115200 bits per second:
   Serial.begin(115200);
-  int arr[NUM_TASKS];
   
+  uint8_t arr[NUM_TASKS];
   int i = 0;
+  
   while(i < NUM_TASKS)
   {
     arr[i] = i;
@@ -42,20 +43,21 @@ void setup(){
     i++;
   }
   
-  //vTaskStartScheduler();
+  vTaskStartScheduler();
 }
 
-void loop(){
-};
+void loop(){};
 /*--------------------------------------------------*/
 /*---------------------- Tasks ---------------------*/
 /*--------------------------------------------------*/
 
   void Task(void *pvParameters)  // This is a task.
   {
+    uint8_t *k;
+    k = (uint8_t *) pvParameters;
+    
     for(;;){
-      (void) pvParameters;
       ets_delay_us(10000);
-      task_func(pvParameters);
+      task_func(k);
     }
   }
