@@ -14,6 +14,7 @@
 void Task(void *pvParameters);
 void task_func(uint8_t *argc)
 {
+    ets_delay_us(3000);
     Serial.println(":]");
     Serial.println(*argc);
     return;
@@ -55,9 +56,8 @@ void loop(){};
   {
     uint8_t *k;
     k = (uint8_t *) pvParameters;
-    
-    for(;;){
-      ets_delay_us(10000);
+    ets_delay_us(1000);
       task_func(k);
+    for(;;){
     }
   }
