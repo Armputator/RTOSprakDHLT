@@ -14,6 +14,7 @@
 void Task(void *pvParameters);
 void task_func(void *argc)
 {
+    Serial.println(":]");
     Serial.println(*(int *)argc);
     return;
 };
@@ -22,23 +23,26 @@ void task_func(void *argc)
 void setup(){
   // initialize serial communication at 115200 bits per second:
   Serial.begin(115200);
- int arr[NUM_TASKS];
+  int arr[NUM_TASKS];
   
-  for(int i = 0;i<NUM_TASKS;i++)
+  int i = 0;
+  while(i < NUM_TASKS)
   {
     arr[i] = i;
     Serial.print("i:");Serial.print(i,DEC);Serial.print("|a:");Serial.println(arr[i],DEC);
+    
     xTaskCreatePinnedToCore(
       Task
       ,  "Task"   // A name just for humans
       ,  1024  // This stack size can be checked & adjusted by reading the Stack Highwater
       ,  (void *)(arr + i)
-      ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+      ,  0  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
       ,  NULL 
       ,  ARDUINO_RUNNING_CORE);
+    i++;
   }
   
-  vTaskStartScheduler();
+  //vTaskStartScheduler();
 }
 
 void loop(){
@@ -51,7 +55,7 @@ void loop(){
   {
     for(;;){
       (void) pvParameters;
-      ets_delay_us(1000);
+      ets_delay_us(10000);
       task_func(pvParameters);
     }
   }
