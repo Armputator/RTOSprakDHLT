@@ -5,6 +5,7 @@
 #endif
 
 #define NUM_TASKS 5
+#define OUTPUT_PERIOD 1 //in seconds
 
 //-------------------------------
 
@@ -45,7 +46,7 @@ void setup(){
   //xTaskCreatePinnedToCore(Puts, "Output", 2048, NULL, NUM_TASKS, NULL,  ARDUINO_RUNNING_CORE);  //priority 3
   
   Serial.println("Setup Done!");
-} void loop(){};
+} void loop(){}
 
 /*--------------------------------------------------*/
 /*---------------------- Tasks ---------------------*/
@@ -61,7 +62,7 @@ void task_func(void *pvParameters)
       lastincrease = micros();
     }
     return;
-};
+}
 
 void func(void){  Serial.println(":]"); }; //unnecessary if task_func works
 
@@ -77,11 +78,12 @@ void Task(void *pvParameters)
       //func();
       task_func((void *)taskcounter);
     }
-};
+}
 
 void Puts(void *pvParameters)
 {
-  vTaskDelay(1100);
+  const TickType_t xDelay = OUTPUT_PERIOD * 1000 / portTICK_PERIOD_MS;
+  vTaskDelay(1000);
   for(;;)
   {
     if(millis() - lastoutput >= 1000)
@@ -94,6 +96,7 @@ void Puts(void *pvParameters)
         Serial.println(*(counter+i));
       }
       lastoutput = millis();
-    };
-  };
-};
+    }
+    vTaskDelay(xDelay);
+  }
+}
