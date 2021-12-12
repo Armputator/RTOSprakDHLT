@@ -36,8 +36,17 @@ void setup(){
   // initialize serial communication at 115200 bits per second:
   Serial.begin(115200);
   
-  uint8_t arr[NUM_TASKS]; //maximum of 256 tasks 
+  puts_semaphore = xSemaphoreCreateBinary();
   
+  uint8_t arr[NUM_TASKS]; //maximum of 256 tasks 
+
+//---------OUTPUT TIMER INITIALIZING----------//
+  output_tmr = xTimerCreate("OutputTimer",OUTPUT_PERIOD/portTICK_PERIOD_MS, pdTRUE, (void*)(NUM_TASKS + 1), PutsTMR_callback);
+  xTimerStart(output_tmr, 0);
+  //timer_task = xTimerGetTimerDaemonTaskHandle();
+  //vTaskPrioritySet(timer_task, TIMER_TASK_PRIO);
+
+//---------TASKS INITIALIZING--------------//
   for(int i = 0;i<NUM_TASKS;i++)
   {
     arr[i] = i;
@@ -49,15 +58,11 @@ void setup(){
     
     Serial.print("|a:");Serial.println(arr[i],DEC);
   }
-  
+
+//---------OUTPUT TASK INITIALIZING----------//
   //xTaskCreatePinnedToCore(Puts, "Output", 2048, NULL, NUM_TASKS, NULL,  ARDUINO_RUNNING_CORE);  //priority NUM_TASKS
   //xTaskCreatePinnedToCore(Puts, "Output", 2048, NULL, 1, NULL,  ARDUINO_RUNNING_CORE);  //priority 1
   xTaskCreatePinnedToCore(Puts, "Output", 2048, NULL, 3, NULL,  ARDUINO_RUNNING_CORE);  //priority 3
-
-  output_tmr = xTimerCreate("OutputTimer",OUTPUT_PERIOD/portTICK_PERIOD_MS, pdTRUE, (void*)(NUM_TASKS + 1), PutsTMR_callback);
-  //timer_task = xTimerGetTimerDaemonTaskHandle();
-  //vTaskPrioritySet(timer_task, TIMER_TASK_PRIO);
-  xTimerStart(output_tmr, 0);
   
   Serial.println("Setup Done!");
 } void loop(){}
