@@ -4,8 +4,8 @@
 #define ARDUINO_RUNNING_CORE 1
 #endif
 
-#define NUM_TASKS 5
-#define OUTPUT_PERIOD 1 //in seconds
+#define NUM_TASKS 5 //max 256 tasks because of task number array (see setup funciton)
+#define OUTPUT_PERIOD 1000 //time between two outputs in milliseconds
 #define TIMER_TASK_PRIO 10 //priority integer
 
 //-------------------------------
@@ -14,7 +14,7 @@ uint32_t counter[NUM_TASKS] = {0};
 unsigned long lastincrease = 0;
 unsigned long lastoutput = 0;
 volatile TimerHandle_t output_tmr;
-TaskHandle_t timer_task = xTimerGetTimerDaemonTaskHandle();
+TaskHandle_t timer_task;
 
 //-------------------------------
 
@@ -32,7 +32,7 @@ void setup(){
   // initialize serial communication at 115200 bits per second:
   Serial.begin(115200);
   
-  uint8_t arr[NUM_TASKS]; // array 
+  uint8_t arr[NUM_TASKS]; //maximum of 256 tasks 
   
   for(int i = 0;i<NUM_TASKS;i++)
   {
@@ -50,8 +50,10 @@ void setup(){
   //xTaskCreatePinnedToCore(Puts, "Output", 2048, NULL, 1, NULL,  ARDUINO_RUNNING_CORE);  //priority 1
   xTaskCreatePinnedToCore(Puts, "Output", 2048, NULL, NUM_TASKS, NULL,  ARDUINO_RUNNING_CORE);  //priority 3
 
-  output_tmr = xTimerCreate();
+  output_tmr =  = xTimerCreate("OutputTimer",OUTPUT_PERIOD/portTICK_PERIOD_MS, pdTRUE, NUM_TASKS + 1, PutsTMR_callback);
+  timer_task = xTimerGetTimerDaemonTaskHandle();
   vTaskPrioritySet(timer_task, TIMER_TASK_PRIO);
+  xTimerStart(output_tmr, 0);
   
   Serial.println("Setup Done!");
 } void loop(){}
@@ -62,7 +64,8 @@ void setup(){
 
 void PutsTMR_callback( TimerHandle_t output_tmr)
 {
-  
+  //Serial.println("Resuming Output function");
+  vTaskResume(Puts);
 }
 
 void task_func(void *pvParameters)
