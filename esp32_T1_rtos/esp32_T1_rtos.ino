@@ -43,7 +43,7 @@ void setup(){
   
   //xTaskCreatePinnedToCore(Puts, "Output", 2048, NULL, NUM_TASKS, NULL,  ARDUINO_RUNNING_CORE);  //priority NUM_TASKS
   xTaskCreatePinnedToCore(Puts, "Output", 2048, NULL, 1, NULL,  ARDUINO_RUNNING_CORE);  //priority 1
-  //xTaskCreatePinnedToCore(Puts, "Output", 2048, NULL, NUM_TASKS, NULL,  ARDUINO_RUNNING_CORE);  //priority 3
+  //xTaskCreatePinnedToCore(Puts, "Output", 2048, NULL, 3, NULL,  ARDUINO_RUNNING_CORE);  //priority 3
   
   Serial.println("Setup Done!");
 } void loop(){}
