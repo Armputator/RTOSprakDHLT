@@ -5,7 +5,7 @@
 #endif
 
 #define INCLUDE_vTaskSuspend 1
-//#define configUSE_TIMERS 1
+#define configUSE_TIMERS 1
 
 #define NUM_TASKS 5 //max 256 tasks because of task number array (see setup funciton)
 #define OUTPUT_PERIOD 1000 //time between two outputs in milliseconds
