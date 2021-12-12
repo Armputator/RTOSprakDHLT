@@ -55,8 +55,8 @@ void setup(){
   xTaskCreatePinnedToCore(Puts, "Output", 2048, NULL, NUM_TASKS, NULL,  ARDUINO_RUNNING_CORE);  //priority 3
 
   output_tmr = xTimerCreate("OutputTimer",OUTPUT_PERIOD/portTICK_PERIOD_MS, pdTRUE, (void*)(NUM_TASKS + 1), PutsTMR_callback);
-  timer_task = xTimerGetTimerDaemonTaskHandle();
-  vTaskPrioritySet(timer_task, TIMER_TASK_PRIO);
+  //timer_task = xTimerGetTimerDaemonTaskHandle();
+  //vTaskPrioritySet(timer_task, TIMER_TASK_PRIO);
   xTimerStart(output_tmr, 0);
   
   Serial.println("Setup Done!");
