@@ -16,33 +16,33 @@
 TimerHandle_t Timer_A;
 TimerHandle_t Timer_B;
 TimerHandle_t Timer_C;
+
 SemaphoreHandle_t SerialSema;
-SemaphoreHandle_t ASema;
-SemaphoreHandle_t BSema;
-SemaphoreHandle_t CSema;
+
+SemaphoreHandle_t AStart;
+SemaphoreHandle_t BStart;
+SemaphoreHandle_t CStart;
+
+SemaphoreHandle_t ADone;
+SemaphoreHandle_t BDone;
+SemaphoreHandle_t CDone;
 
 //-------------------------------
 
+void A_callback(TimerHandle_t Timer_A); 
 void TaskA(void *pvParameters);
 TaskHandle_t A;
-bool A_Done = false;
 int A_violations = 0;
 
+void B_callback(TimerHandle_t Timer_B); 
 void TaskB(void *pvParameters);
 TaskHandle_t B;
-bool B_Done = false;
 int B_violations = 0;
 
+void C_callback(TimerHandle_t Timer_C); 
 void TaskC(void *pvParameters);
 TaskHandle_t C;
-bool C_Done = false;
 int C_violations = 0;
-
-void A_callback(TimerHandle_t Timer_A); 
-
-void B_callback(TimerHandle_t Timer_B); 
-
-void C_callback(TimerHandle_t Timer_C); 
 
 //-------------------------------
 
@@ -50,10 +50,17 @@ void setup(){
   // initialize serial communication at 115200 bits per second:
   Serial.begin(115200);
 
-  SerialSema = xSemaphoreCreateBinary();
-  ASema = xSemaphoreCreateBinary();
-  BSema = xSemaphoreCreateBinary();
-  CSema = xSemaphoreCreateBinary();
+//---------SEMAPHORES---------//
+  //SerialSema = xSemaphoreCreateBinary();
+  SerialSema = xSemaphoreCreateMutex();
+
+  AStart = xSemaphoreCreateBinary();
+  BStart = xSemaphoreCreateBinary();
+  CStart = xSemaphoreCreateBinary();
+  
+  ADone = xSemaphoreCreateBinary();
+  BDone = xSemaphoreCreateBinary();
+  CDone = xSemaphoreCreateBinary();
 
 //---------TIMER INITIALIZING----------//
   Timer_A = xTimerCreate("Task A periodicity",A_PERIOD/portTICK_PERIOD_MS, pdTRUE, NULL, A_callback);
@@ -74,9 +81,11 @@ void setup(){
   xTimerStart(Timer_C, 0);
 
   xSemaphoreGive(SerialSema);
-  xSemaphoreGive(ASema);
-  xSemaphoreGive(BSema);
-  xSemaphoreGive(CSema);
+
+  xSemaphoreGive(AStart);
+  xSemaphoreGive(BStart);
+  xSemaphoreGive(CStart)
+;
   
   Serial.println("Setup Done!");
   //vTaskStartScheduler();
@@ -96,74 +105,74 @@ int Serial_Send(int data){
 }
 
 void A_callback(TimerHandle_t Timer_A){
-  xSemaphoreGive(ASema);
-  if(A_Done){
-    //vTaskResume(A);
-  } else {
+  
+  if(xSemaphoreTake(ADone,0) == pdFALSE){
     A_violations++;
     Serial.print("Task A: "); Serial.print(A_violations); 
     Serial.println(" process time violation!");
   }
+
+  xSemaphoreGive(AStart);
 }
 
 void B_callback(TimerHandle_t Timer_B){
-  xSemaphoreGive(BSema);
-  if(B_Done){
-    //vTaskResume(B);
-  } else {
+  
+  if(xSemaphoreTake(BDone,0) == pdFALSE){
     B_violations++;
     Serial.print("Task B: "); Serial.print(B_violations); 
     Serial.println(" process time violation!");
   }
+
+  xSemaphoreGive(BStart);
 }
 
 void C_callback(TimerHandle_t Timer_C){
-  xSemaphoreGive(CSema);
-  if(C_Done){
-    //vTaskResume(C);
-  } else {
+  
+  if(xSemaphoreTake(CDone,0) == pdFALSE){
     C_violations++;
     Serial.print("Task C: "); Serial.print(C_violations); 
     Serial.println(" process time violation!");
   }
+
+  xSemaphoreGive(CStart);
 }
 
 void TaskA(void *pvParameters){
     for(;;)
     {
-      xSemaphoreTake(ASema,portMAX_DELAY);
-      A_Done = false;
+      xSemaphoreTake(AStart,portMAX_DELAY);
+
       Serial.println("A!");
       Serial_Send(1);
       //ets_delay_us(16000);
       ets_delay_us(1000);
-      A_Done = true;
-      //vTaskSuspend(NULL);
+
+      xSemaphoreGive(ADone);
     }
 }
 
 void TaskB(void *pvParameters){
     for(;;)
     {
-      xSemaphoreTake(BSema,portMAX_DELAY);
-      B_Done = false;
+      xSemaphoreTake(BStart,portMAX_DELAY);
+
       Serial.println("B!");
       ets_delay_us(200000);
-      B_Done = true;
-      //vTaskSuspend(NULL);
+
+      xSemaphoreGive(BDone);
     }
 }
 
 void TaskC(void *pvParameters){
     for(;;)
     {
-      xSemaphoreTake(CSema,portMAX_DELAY);
-      C_Done = false;
+      xSemaphoreTake(CStart,portMAX_DELAY);
+
       Serial.println("C!");
       Serial_Send(3);
       //ets_delay_us(17000);
       ets_delay_us(2000);
-      C_Done = true;
-      //vTaskSuspend(NULL);
+      
+      xSemaphoreGive(CDone);
     }
 }
