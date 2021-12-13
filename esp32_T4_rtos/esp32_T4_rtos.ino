@@ -7,72 +7,54 @@
 #define INCLUDE_vTaskSuspend 1
 #define configUSE_TIMERS 1
 
-#define NUM_TASKS 5 //max 256 tasks because of task number array (see setup funciton)
-#define OUTPUT_PERIOD 1000 //time between two outputs in milliseconds
-#define TIMER_TASK_PRIO 10 //priority of timer daemon integer
+#define A_PERIOD 2000
+#define B_PERIOD 501
+#define C_PERIOD 98
+#define TIMER_TASK_PRIO 5
+//-------------------------------
+
+TimerHandle_t Timer_A;
+TimerHandle_t Timer_B;
+TimerHandle_t Timer_C;
 
 //-------------------------------
 
-uint32_t counter[NUM_TASKS] = {0};
-unsigned long lastincrease = 0;
-unsigned long lastoutput = 0;
+void TaskA(void *pvParameters);
+TaskHandle_t A;
+void TaskB(void *pvParameters);
+TaskHandle_t B;
+void TaskC(void *pvParameters);
+TaskHandle_t C;
 
-TimerHandle_t output_tmr;
-TaskHandle_t timer_task = NULL;
-SemaphoreHandle_t puts_semaphore;
-QueueHandle_t output_queue;
+void A_callback(TimerHandle_t Timer_A); 
 
-typedef struct {
-  uint8_t t_id;
-  uint32_t cnt;
-} cntr_info;
-//-------------------------------
+void B_callback(TimerHandle_t Timer_B); 
 
-void Task(void *pvParameters);
- 
-void task_func(void *pvParameters);
-
-void Puts(void *pvParameters);
-
-void PutsTMR_callback(TimerHandle_t output_tmr); 
+void C_callback(TimerHandle_t Timer_C); 
 
 //-------------------------------
 
 void setup(){
   // initialize serial communication at 115200 bits per second:
   Serial.begin(115200);
-  
-  puts_semaphore = xSemaphoreCreateBinary();
-  
-  uint8_t arr[NUM_TASKS]; //maximum of 256 tasks 
 
-//---------OUTPUT TIMER INITIALIZING----------//
-  output_tmr = xTimerCreate("OutputTimer",OUTPUT_PERIOD/portTICK_PERIOD_MS, pdTRUE, (void*)(NUM_TASKS + 1), PutsTMR_callback);
-  xTimerStart(output_tmr, 0);
-  //timer_task = xTimerGetTimerDaemonTaskHandle();
-  //vTaskPrioritySet(timer_task, TIMER_TASK_PRIO);
+//---------TIMER INITIALIZING----------//
+  Timer_A = xTimerCreate("Task A periodicity",A_PERIOD/portTICK_PERIOD_MS, pdTRUE, NULL, A_callback);
+  Timer_B = xTimerCreate("Task A periodicity",B_PERIOD/portTICK_PERIOD_MS, pdTRUE, NULL, B_callback);
+  Timer_C = xTimerCreate("Task A periodicity",C_PERIOD/portTICK_PERIOD_MS, pdTRUE, NULL, C_callback);
+  
+  xTimerStart(Timer_A, 0);
+  xTimerStart(Timer_B, 0);
+  xTimerStart(Timer_C, 0);
+  
+  //TaskHandle_t timer_task = NULL;
+  TaskHandle_t timer_task = xTimerGetTimerDaemonTaskHandle();
+  TaskPrioritySet(timer_task, TIMER_TASK_PRIO);
 
 //---------TASKS INITIALIZING--------------//
-  for(int i = 0;i<NUM_TASKS;i++)
-  {
-    arr[i] = i;
-    //Serial.print("i:");Serial.print(i,DEC);
-
-    xTaskCreatePinnedToCore(Task, "Task" + i, 2048, (void *)(arr + i), 1, NULL,  ARDUINO_RUNNING_CORE); //all tasks priority 1
-    //xTaskCreatePinnedToCore(Task, "Task" + i, 2048, (void *)(arr + i), i, NULL,  ARDUINO_RUNNING_CORE); //tasks increasing priority, 0 to NUM_TASKS - 1
-    //xTaskCreatePinnedToCore(Task, "Task" + i, 2048, (void *)(arr + i), (i == 0 ? 1 : (i % 2 == 0 ? 1 : 2)), NULL,  ARDUINO_RUNNING_CORE); //tasks alternating priority between 1 and 2
-    
-    Serial.print("|a:");Serial.println(arr[i],DEC);
-  }
-
-//---------QUEUE INTIALIZING----------------//
-output_queue = xQueueCreate(NUM_TASKS, sizeof(cntr_info));
-
-//---------OUTPUT TASK INITIALIZING----------//
-  //xTaskCreatePinnedToCore(Puts, "Output", 2048, NULL, NUM_TASKS, NULL,  ARDUINO_RUNNING_CORE);  //priority NUM_TASKS
-  //xTaskCreatePinnedToCore(Puts, "Output", 2048, NULL, 1, NULL,  ARDUINO_RUNNING_CORE);  //priority 1
-  xTaskCreatePinnedToCore(Puts, "Output", 2048, NULL, 3, NULL,  ARDUINO_RUNNING_CORE);  //priority 3
-
+  xTaskCreatePinnedToCore(TaskA, "Task A", 2048, NULL, 1, &A,  ARDUINO_RUNNING_CORE);
+  xTaskCreatePinnedToCore(TaskB, "Task B", 2048, NULL, 2, &B,  ARDUINO_RUNNING_CORE);
+  xTaskCreatePinnedToCore(TaskC, "Task C", 2048, NULL, 3, &C,  ARDUINO_RUNNING_CORE);
   
   Serial.println("Setup Done!");
 } void loop(){}
@@ -81,61 +63,44 @@ output_queue = xQueueCreate(NUM_TASKS, sizeof(cntr_info));
 /*---------------------- Tasks ---------------------*/
 /*--------------------------------------------------*/
 
-void PutsTMR_callback( TimerHandle_t output_tmr)
-{
-  //Serial.println("Resuming Output function");
-  xSemaphoreGive(puts_semaphore);
+void A_callback(TimerHandle_t Timer_A){
+  vTaskResume(A);
 }
 
-void task_func(void *pvParameters)
-{
-  ets_delay_us(1000);
-  //Serial.println(":]");
-  if(micros() - lastincrease >= 1000)
-  {
-    Serial.println(*(uint8_t *)pvParameters);
-    (*(counter + *(uint8_t *)pvParameters))++;
-    cntr_info temp_item;
-    temp_item.t_id = *(uint8_t *)pvParameters;
-    temp_item.cnt = (*(counter + *(uint8_t *)pvParameters));
-    xQueueSend(output_queue, (void *)&temp_item, 0);
-    lastincrease = micros();
-  }
-  return;
+void B_callback(TimerHandle_t Timer_B){
+  vTaskResume(B);
 }
 
-void Task(void *pvParameters)
+void C_callback(TimerHandle_t Timer_C){
+  vTaskResume(C);
+}
+
+void TaskA(void *pvParameters)
 {
-    uint8_t ID;
-    ID = *(uint8_t *)pvParameters;
-    vTaskDelay(1000);
     for(;;)
     {
-      //ets_delay_us(1000);
-      //func();
-      //Serial.println(*(uint8_t *)(void *)&ID);
-      task_func((void *)&ID);
-      vTaskDelay(1 / portTICK_PERIOD_MS);
+      Serial.println("A!");
+      ets_delay_us(16000);
+      vTaskSuspend(NULL);
     }
 }
 
-void Puts(void *pvParameters)
+void TaskB(void *pvParameters)
 {
-  vTaskDelay(1000);
-  for(;;)
-  {
-    xSemaphoreTake(puts_semaphore, portMAX_DELAY);
+    for(;;)
     {
-      for(int i = 0;i < NUM_TASKS;i++)
-      {
-        cntr_info temp_item;
-        xQueueReceive(output_queue, (void*)&temp_item, 0);
-        Serial.print("Counter ");
-        Serial.print(temp_item.t_id);
-        Serial.print(" : ");
-        Serial.println(temp_item.cnt);
-      }
-      lastoutput = millis();
+      Serial.println("B!");
+      ets_delay_us(200000);
+      vTaskSuspend(NULL);
     }
-  }
+}
+
+void TaskC(void *pvParameters)
+{
+    for(;;)
+    {
+      Serial.println("C!");
+      ets_delay_us(17000);
+      vTaskSuspend(NULL);
+    }
 }

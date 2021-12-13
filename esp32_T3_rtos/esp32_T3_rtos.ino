@@ -49,8 +49,8 @@ void setup(){
 //---------OUTPUT TIMER INITIALIZING----------//
   output_tmr = xTimerCreate("OutputTimer",OUTPUT_PERIOD/portTICK_PERIOD_MS, pdTRUE, (void*)(NUM_TASKS + 1), PutsTMR_callback);
   xTimerStart(output_tmr, 0);
-  //timer_task = xTimerGetTimerDaemonTaskHandle();
-  //vTaskPrioritySet(timer_task, TIMER_TASK_PRIO);
+  timer_task = xTimerGetTimerDaemonTaskHandle();
+  vTaskPrioritySet(timer_task, TIMER_TASK_PRIO);
 
 //---------TASKS INITIALIZING--------------//
   for(int i = 0;i<NUM_TASKS;i++)
@@ -93,7 +93,7 @@ void task_func(void *pvParameters)
   //Serial.println(":]");
   if(micros() - lastincrease >= 1000)
   {
-    Serial.println(*(uint8_t *)pvParameters);
+    //Serial.println(*(uint8_t *)pvParameters);
     (*(counter + *(uint8_t *)pvParameters))++;
     cntr_info temp_item;
     temp_item.t_id = *(uint8_t *)pvParameters;
