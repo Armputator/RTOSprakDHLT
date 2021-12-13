@@ -93,6 +93,7 @@ void task_func(void *pvParameters)
   //Serial.println(":]");
   if(micros() - lastincrease >= 1000)
   {
+    Serial.println(*(uint8_t *)pvParameters);
     (*(counter + *(uint8_t *)pvParameters))++;
     cntr_info temp_item;
     temp_item.t_id = *(uint8_t *)pvParameters;
@@ -105,14 +106,15 @@ void task_func(void *pvParameters)
 
 void Task(void *pvParameters)
 {
-    uint8_t k;
-    k = *(uint8_t *)pvParameters;
+    uint8_t ID;
+    ID = *(uint8_t *)pvParameters;
     vTaskDelay(1000);
     for(;;)
     {
       //ets_delay_us(1000);
       //func();
-      task_func((void *)&k);
+      //Serial.println(*(uint8_t *)(void *)&ID);
+      task_func((void *)&ID);
       vTaskDelay(1 / portTICK_PERIOD_MS);
     }
 }
@@ -127,7 +129,7 @@ void Puts(void *pvParameters)
       for(int i = 0;i < NUM_TASKS;i++)
       {
         cntr_info temp_item;
-        xQueueSend(output_queue, (void*)&temp_item, 0);
+        xQueueReceive(output_queue, (void*)&temp_item, 0);
         Serial.print("Counter ");
         Serial.print(temp_item.t_id);
         Serial.print(" : ");
